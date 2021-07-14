@@ -5,6 +5,10 @@ VisualStudioVersion = 16.0.31005.135
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SocketPacket", "SocketPacket\SocketPacket.csproj", "{3BC98A1C-C93A-46D5-9285-F1DEEB7FF153}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SampleClient", "SampleClient\SampleClient.csproj", "{8E205AF4-F6C2-4ACE-95A0-F03CEA0B565E}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SampleServer", "SampleServer\SampleServer.csproj", "{ED7E73C3-2666-4210-A6F2-EB7868740978}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,6 +19,14 @@ Global
 		{3BC98A1C-C93A-46D5-9285-F1DEEB7FF153}.Debug|Any CPU.Build.0 = Release|Any CPU
 		{3BC98A1C-C93A-46D5-9285-F1DEEB7FF153}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{3BC98A1C-C93A-46D5-9285-F1DEEB7FF153}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8E205AF4-F6C2-4ACE-95A0-F03CEA0B565E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8E205AF4-F6C2-4ACE-95A0-F03CEA0B565E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8E205AF4-F6C2-4ACE-95A0-F03CEA0B565E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8E205AF4-F6C2-4ACE-95A0-F03CEA0B565E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{ED7E73C3-2666-4210-A6F2-EB7868740978}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{ED7E73C3-2666-4210-A6F2-EB7868740978}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{ED7E73C3-2666-4210-A6F2-EB7868740978}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{ED7E73C3-2666-4210-A6F2-EB7868740978}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -15,13 +15,14 @@ namespace SocketPacket.PacketSocket {
         public int ReceiveTimeout { get { return socket.ReceiveTimeout; } set { socket.ReceiveTimeout = value; } }
         public bool IsBound { get { return socket.IsBound; } }
         public bool Connected { get { return socket.Connected; } }
+        public EndPoint RemoteEndPoint { get { return socket.RemoteEndPoint; } }
 
         private List<PacketSocket> clientSocketList;
         private Thread acceptSocketThread, packetReadThread, clientCleanThread, clientDisconnectThread;
         private bool isRunnable;
         private bool disposedValue;
 
-        public event EventHandler<PacketSocketAsyncEventArgs> AcceptCompleted, DisconnectCompleted, ReceiveCompleted;
+        public event EventHandler<PacketSocketAsyncEventArgs> AcceptCompleted, ConnectCompleted, DisconnectCompleted, ReceiveCompleted;
 
         private PacketSocket(Socket socket) {
             this.socket = socket;
@@ -44,8 +45,14 @@ namespace SocketPacket.PacketSocket {
 
             Close(false);
             isRunnable = true;
-            RunPacketReadWorker();
+            RunPacketReadInClientWorker();
             RunClientDisconnectWorker();
+
+            if (ConnectCompleted != null) {
+                PacketSocketAsyncEventArgs args = new PacketSocketAsyncEventArgs();
+                args.ConnectSocket = this;
+                ConnectCompleted(this, args);
+            }
         }
 
         public void Connect(IPAddress address, int port) {
@@ -53,8 +60,14 @@ namespace SocketPacket.PacketSocket {
 
             Close(false);
             isRunnable = true;
-            RunPacketReadWorker();
+            RunPacketReadInClientWorker();
             RunClientDisconnectWorker();
+
+            if (ConnectCompleted != null) {
+                PacketSocketAsyncEventArgs args = new PacketSocketAsyncEventArgs();
+                args.ConnectSocket = this;
+                ConnectCompleted(this, args);
+            }
         }
 
         public void Connect(string host, int port) {
@@ -62,8 +75,14 @@ namespace SocketPacket.PacketSocket {
 
             Close(false);
             isRunnable = true;
-            RunPacketReadWorker();
+            RunPacketReadInClientWorker();
             RunClientDisconnectWorker();
+
+            if (ConnectCompleted != null) {
+                PacketSocketAsyncEventArgs args = new PacketSocketAsyncEventArgs();
+                args.ConnectSocket = this;
+                ConnectCompleted(this, args);
+            }
         }
 
         public Task ConnectTimeout(IPEndPoint remoteEP, int timeout, bool force = false) {
@@ -79,8 +98,95 @@ namespace SocketPacket.PacketSocket {
 
                         Close(false);
                         isRunnable = true;
-                        RunPacketReadWorker();
+                        RunPacketReadInClientWorker();
                         RunClientDisconnectWorker();
+
+                        if (ConnectCompleted != null) {
+                            PacketSocketAsyncEventArgs args = new PacketSocketAsyncEventArgs();
+                            args.ConnectSocket = this;
+                            ConnectCompleted(this, args);
+                        }
+                    }
+                }
+                catch { }
+            });
+        }
+
+        public Task ConnectTimeout(IPAddress address, int port, int timeout, bool force = false) {
+            return Task.Run(() => {
+                if ((socket.IsBound || socket.Connected) && !force) return;
+                IAsyncResult result = socket.BeginConnect(address, port, null, null);
+                bool connected = result.AsyncWaitHandle.WaitOne(timeout, true);
+
+                try {
+                    socket.EndConnect(result);
+                    if (connected) {
+                        isRunnable = true;
+
+                        Close(false);
+                        isRunnable = true;
+                        RunPacketReadInClientWorker();
+                        RunClientDisconnectWorker();
+
+                        if (ConnectCompleted != null) {
+                            PacketSocketAsyncEventArgs args = new PacketSocketAsyncEventArgs();
+                            args.ConnectSocket = this;
+                            ConnectCompleted(this, args);
+                        }
+                    }
+                }
+                catch { }
+            });
+        }
+
+        public Task ConnectTimeout(IPAddress[] addresses, int port, int timeout, bool force = false) {
+            return Task.Run(() => {
+                if ((socket.IsBound || socket.Connected) && !force) return;
+                IAsyncResult result = socket.BeginConnect(addresses, port, null, null);
+                bool connected = result.AsyncWaitHandle.WaitOne(timeout, true);
+
+                try {
+                    socket.EndConnect(result);
+                    if (connected) {
+                        isRunnable = true;
+
+                        Close(false);
+                        isRunnable = true;
+                        RunPacketReadInClientWorker();
+                        RunClientDisconnectWorker();
+
+                        if (ConnectCompleted != null) {
+                            PacketSocketAsyncEventArgs args = new PacketSocketAsyncEventArgs();
+                            args.ConnectSocket = this;
+                            ConnectCompleted(this, args);
+                        }
+                    }
+                }
+                catch { }
+            });
+        }
+
+        public Task ConnectTimeout(string host, int port, int timeout, bool force = false) {
+            return Task.Run(() => {
+                if ((socket.IsBound || socket.Connected) && !force) return;
+                IAsyncResult result = socket.BeginConnect(host, port, null, null);
+                bool connected = result.AsyncWaitHandle.WaitOne(timeout, true);
+
+                try {
+                    socket.EndConnect(result);
+                    if (connected) {
+                        isRunnable = true;
+
+                        Close(false);
+                        isRunnable = true;
+                        RunPacketReadInClientWorker();
+                        RunClientDisconnectWorker();
+
+                        if (ConnectCompleted != null) {
+                            PacketSocketAsyncEventArgs args = new PacketSocketAsyncEventArgs();
+                            args.ConnectSocket = this;
+                            ConnectCompleted(this, args);
+                        }
                     }
                 }
                 catch { }
@@ -101,21 +207,18 @@ namespace SocketPacket.PacketSocket {
 
         public void Bind(EndPoint localEP) {
             socket.Bind(localEP);
-            socket.Listen(0);
+            socket.Listen(50);
 
-            if(acceptSocketThread != null && acceptSocketThread.IsAlive) {
-                try {
-                    acceptSocketThread.Abort();
-                }
-                catch { }
-            }
             Close(false);
 
             isRunnable = true;
             clientSocketList = new List<PacketSocket>();
 
             acceptSocketThread = new Thread(() => AcceptSocketWorker());
+            acceptSocketThread.Start();
             clientCleanThread = new Thread(() => ClientCleanWorker());
+            clientCleanThread.Start();
+            RunPacketReadInServerWorker();
         }
 
         private void CloseThread(Thread thread) {
@@ -133,21 +236,38 @@ namespace SocketPacket.PacketSocket {
                     Socket client = socket.Accept();
                     PacketSocket packetClient = new PacketSocket(client);
                     clientSocketList.Add(packetClient);
+                    if(AcceptCompleted != null) {
+                        PacketSocketAsyncEventArgs args = new PacketSocketAsyncEventArgs();
+                        args.AcceptSocket = packetClient;
+                        AcceptCompleted(this, args);
+                    }
                 }
                 catch { }
             }
         }
 
-        private void RunPacketReadWorker() {
-            packetReadThread = new Thread(() => PacketReadWorker());
+        private void RunPacketReadInClientWorker() {
+            packetReadThread = new Thread(() => PacketReadWorkerInClient());
+            packetReadThread.Start();
         }
 
-        private void PacketReadWorker() {
+        private void RunPacketReadInServerWorker() {
+            packetReadThread = new Thread(() => PacketReadWorkerInServer());
+            packetReadThread.Start();
+        }
+
+        private void PacketReadWorkerInClient() {
+            while(isRunnable && socket != null && socket.Connected) {
+                PacketReceived();
+            }
+        }
+
+        private void PacketReadWorkerInServer() {
             while(isRunnable) {
                 for(int i = 0; i < clientSocketList.Count; i++) {
                     try {
                         PacketSocket client = clientSocketList[i];
-                        if(client.socket != null && client.socket.Connected) {
+                        if (client.socket != null && client.socket.Connected) {
                             client.PacketReceived();
                         }
                     }
@@ -189,6 +309,7 @@ namespace SocketPacket.PacketSocket {
 
         private void RunClientDisconnectWorker() {
             clientDisconnectThread = new Thread(() => ClientDisconnectWorker());
+            clientDisconnectThread.Start();
         }
 
         private void ClientDisconnectWorker() {
@@ -214,13 +335,14 @@ namespace SocketPacket.PacketSocket {
                     buf = new byte[length];
                     socket.Receive(buf, buf.Length, SocketFlags.None);
 
-                    if (AcceptCompleted != null) {
+                    if (ReceiveCompleted != null) {
                         PacketSocketAsyncEventArgs args = new PacketSocketAsyncEventArgs();
                         args.ReceivePacket = Packet.Deserialize(buf);
-                        AcceptCompleted(this, args);
+                        ReceiveCompleted(this, args);
                     }
                 }
-            }catch {
+            }catch(Exception e) {
+                Console.WriteLine(e);
                 try {
                     if (socket != null && socket.Connected && socket.Available > 0) {
                         byte[] buf = new byte[socket.Available];

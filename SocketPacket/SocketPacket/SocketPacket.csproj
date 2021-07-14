@@ -45,6 +45,7 @@
   <ItemGroup>
     <Compile Include="Network\Packet.cs" />
     <Compile Include="PacketBinder.cs" />
+    <Compile Include="PacketSocket\PacketSocketAsyncEventArgs.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="PacketSocket\PacketSocket.cs" />
     <Compile Include="Vector\Vector2D.cs" />
