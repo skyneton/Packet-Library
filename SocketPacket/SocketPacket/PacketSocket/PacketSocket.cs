@@ -202,7 +202,9 @@ namespace SocketPacket.PacketSocket {
                 socket.Send(BitConverter.GetBytes(buf.Length));
                 socket.Send(buf, buf.Length, SocketFlags.None);
             }
-            catch { }
+            catch(Exception e) {
+                throw e;
+            }
         }
 
         public void Bind(EndPoint localEP) {
@@ -313,7 +315,7 @@ namespace SocketPacket.PacketSocket {
         }
 
         private void ClientDisconnectWorker() {
-            while (isRunnable && (socket.IsBound || socket.Connected));
+            while (isRunnable && socket.Connected);
             if (DisconnectCompleted != null) {
                 PacketSocketAsyncEventArgs args = new PacketSocketAsyncEventArgs();
                 args.DisconnectSocket = this;
@@ -337,6 +339,7 @@ namespace SocketPacket.PacketSocket {
 
                     if (ReceiveCompleted != null) {
                         PacketSocketAsyncEventArgs args = new PacketSocketAsyncEventArgs();
+                        args.ReceiveSocket = this;
                         args.ReceivePacket = Packet.Deserialize(buf);
                         ReceiveCompleted(this, args);
                     }

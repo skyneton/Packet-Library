@@ -6,6 +6,7 @@ namespace SocketPacket.PacketSocket {
         public PacketSocket AcceptSocket { get; internal set; }
         public PacketSocket ConnectSocket { get; internal set; }
         public PacketSocket DisconnectSocket { get; internal set; }
+        public PacketSocket ReceiveSocket { get; internal set; }
         public Packet ReceivePacket { get; internal set; }
     }
 }

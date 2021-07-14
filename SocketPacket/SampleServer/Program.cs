@@ -19,11 +19,16 @@ namespace SampleServer {
         }
 
         private static void clientConnected(object sender, PacketSocketAsyncEventArgs e) {
+            e.AcceptSocket.ReceiveCompleted += new EventHandler<PacketSocketAsyncEventArgs>(PacketReceived);
             Console.WriteLine("클라이언트 연결됨 : {0}", e.AcceptSocket.RemoteEndPoint.ToString());
             Packet packet = new Packet();
             packet.type = 255;
             e.AcceptSocket.Send(packet);
             Console.WriteLine("패킷 보냄");
+        }
+
+        private static void PacketReceived(object sender, PacketSocketAsyncEventArgs e) {
+            Console.WriteLine("패킷 받음 : {0} {1}", e.ReceivePacket, e.ReceivePacket.type);
         }
     }
 }
