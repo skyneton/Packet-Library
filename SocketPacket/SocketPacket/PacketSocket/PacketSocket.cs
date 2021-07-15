@@ -21,6 +21,7 @@ namespace SocketPacket.PacketSocket {
         private Thread acceptSocketThread, packetReadThread, clientCleanThread, clientDisconnectThread;
         private bool isRunnable;
         private bool disposedValue;
+        private Queue<Packet> packetQueue = new Queue<Packet>();
 
         public event EventHandler<PacketSocketAsyncEventArgs> AcceptCompleted, ConnectCompleted, DisconnectCompleted, ReceiveCompleted;
 
@@ -28,18 +29,22 @@ namespace SocketPacket.PacketSocket {
             this.socket = socket;
         }
 
+        // <summary>Socket을 생성 및 초기화합니다.</summary>
         public PacketSocket(SocketInformation socketInformation) {
             socket = new Socket(socketInformation);
         }
 
+        // <summary>Socket을 생성 및 초기화합니다.</summary>
         public PacketSocket(SocketType socketType, ProtocolType protocolType) {
             socket = new Socket(socketType, protocolType);
         }
 
+        // <summary>Socket을 생성 및 초기화합니다.</summary>
         public PacketSocket(AddressFamily addressFamily, SocketType socketType, ProtocolType protocolType) {
             socket = new Socket(addressFamily, socketType, protocolType);
         }
 
+        // <summary>Socket을 생성 및 초기화합니다.</summary>
         public void Connect(EndPoint remoteEP) {
             socket.Connect(remoteEP);
 
@@ -55,6 +60,7 @@ namespace SocketPacket.PacketSocket {
             }
         }
 
+        // <summary>특정 주소에 연결합니다.</summary>
         public void Connect(IPAddress address, int port) {
             socket.Connect(address, port);
 
@@ -70,6 +76,7 @@ namespace SocketPacket.PacketSocket {
             }
         }
 
+        // <summary>특정 주소에 연결합니다.</summary>
         public void Connect(string host, int port) {
             socket.Connect(host, port);
 
@@ -85,6 +92,9 @@ namespace SocketPacket.PacketSocket {
             }
         }
 
+        // <summary>연결을 대기합니다.
+        // <param name="timeout">ms 동안 대기할지 설정합니다.</param>
+        // </summary>
         public Task ConnectTimeout(IPEndPoint remoteEP, int timeout, bool force = false) {
             return Task.Run(() => {
                 if ((socket.IsBound || socket.Connected) && !force) return;
@@ -112,6 +122,9 @@ namespace SocketPacket.PacketSocket {
             });
         }
 
+        // <summary>연결을 대기합니다.
+        // <param name="timeout">ms 동안 대기할지 설정합니다.</param>
+        // </summary>
         public Task ConnectTimeout(IPAddress address, int port, int timeout, bool force = false) {
             return Task.Run(() => {
                 if ((socket.IsBound || socket.Connected) && !force) return;
@@ -139,6 +152,9 @@ namespace SocketPacket.PacketSocket {
             });
         }
 
+        // <summary>연결을 대기합니다.
+        // <param name="timeout">ms 동안 대기할지 설정합니다.</param>
+        // </summary>
         public Task ConnectTimeout(IPAddress[] addresses, int port, int timeout, bool force = false) {
             return Task.Run(() => {
                 if ((socket.IsBound || socket.Connected) && !force) return;
@@ -166,6 +182,9 @@ namespace SocketPacket.PacketSocket {
             });
         }
 
+        // <summary>연결을 대기합니다.
+        // <param name="timeout">ms 동안 대기할지 설정합니다.</param>
+        // </summary>
         public Task ConnectTimeout(string host, int port, int timeout, bool force = false) {
             return Task.Run(() => {
                 if ((socket.IsBound || socket.Connected) && !force) return;
@@ -193,20 +212,7 @@ namespace SocketPacket.PacketSocket {
             });
         }
 
-        public void Send(Packet packet) {
-            if (packet == null) return;
-            try {
-                byte[] buf = Packet.Serialize(packet);
-                if (buf == null) return;
-
-                socket.Send(BitConverter.GetBytes(buf.Length));
-                socket.Send(buf, buf.Length, SocketFlags.None);
-            }
-            catch(Exception e) {
-                throw e;
-            }
-        }
-
+        // <summary>주소를 Bind합니다.</summary>
         public void Bind(EndPoint localEP) {
             socket.Bind(localEP);
             socket.Listen(50);
@@ -221,6 +227,29 @@ namespace SocketPacket.PacketSocket {
             clientCleanThread = new Thread(() => ClientCleanWorker());
             clientCleanThread.Start();
             RunPacketReadInServerWorker();
+        }
+
+        // <summary>Packet을 전송합니다.</summary>
+        public void Send(Packet packet) {
+            if (packet == null) return;
+            try {
+                byte[] buf = Packet.Serialize(packet);
+                if (buf == null) return;
+
+                socket.Send(BitConverter.GetBytes(buf.Length));
+                socket.Send(buf, buf.Length, SocketFlags.None);
+            }
+            catch (Exception e) {
+                throw e;
+            }
+        }
+
+        // <summary>Packet 버퍼에서 Packet을 가져옵니다.
+        // 버퍼가 비워져있다면 null이 반환됩니다.
+        // </summary>
+        public Packet Receive() {
+            if (packetQueue.Count <= 0) return null;
+            return packetQueue.Dequeue();
         }
 
         private void CloseThread(Thread thread) {
@@ -341,6 +370,8 @@ namespace SocketPacket.PacketSocket {
                         PacketSocketAsyncEventArgs args = new PacketSocketAsyncEventArgs();
                         args.ReceiveSocket = this;
                         args.ReceivePacket = Packet.Deserialize(buf);
+                        packetQueue.Enqueue(args.ReceivePacket);
+                        args.ReceivePacketAmount = packetQueue.Count;
                         ReceiveCompleted(this, args);
                     }
                 }
@@ -376,11 +407,16 @@ namespace SocketPacket.PacketSocket {
             }
         }
 
+
+        // <summary>소켓을 닫습니다.</summary>
         public void Close() {
             Close(false);
             socket.Close();
         }
 
+        // <summary>소켓연결을 종료합니다.
+        // <param name="reuseSocket">소켓을 재사용할지 결정합니다.</param>
+        // </summary>
         public void Disconnect(bool reuseSocket) {
             socket.Disconnect(reuseSocket);
             Close(false);

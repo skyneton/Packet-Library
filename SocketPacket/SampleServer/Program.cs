@@ -28,7 +28,10 @@ namespace SampleServer {
         }
 
         private static void PacketReceived(object sender, PacketSocketAsyncEventArgs e) {
-            Console.WriteLine("패킷 받음 : {0} {1}", e.ReceivePacket, e.ReceivePacket.type);
+            for (int i = 0; i < e.ReceivePacketAmount; i++) {
+                Packet packet = e.ReceiveSocket.Receive();
+                Console.WriteLine("패킷 받음 : {0} {1}", packet, packet);
+            }
         }
     }
 }
