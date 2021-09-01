@@ -13,7 +13,7 @@ namespace SocketPacket.Network {
             MemoryStream ms = new MemoryStream();
 
             BinaryFormatter bf = new BinaryFormatter();
-            bf.Binder = new PacketBinder();
+            //bf.Binder = new PacketBinder();
 
             bf.Serialize(ms, packet);
 
@@ -22,14 +22,26 @@ namespace SocketPacket.Network {
 
             return result;
         }
+        public static byte[] Serialize(object packet) {
+            MemoryStream ms = new MemoryStream();
 
-        public static Packet Deserialize(byte[] data) {
+            BinaryFormatter bf = new BinaryFormatter();
+            //bf.Binder = new PacketBinder();
+
+            bf.Serialize(ms, packet);
+
+            byte[] result = ms.ToArray();
+            ms.Dispose();
+
+            return result;
+        }
+        public static object Deserialize(byte[] data) {
             MemoryStream ms = new MemoryStream(data);
 
             BinaryFormatter bf = new BinaryFormatter();
-            bf.Binder = new PacketBinder();
+            //bf.Binder = new PacketBinder();
 
-            Packet result = bf.Deserialize(ms) as Packet;
+            object result = bf.Deserialize(ms);
 
             ms.Dispose();
             return result;

@@ -43,7 +43,11 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Network\BytePacket.cs" />
+    <Compile Include="Network\IntegerPacket.cs" />
     <Compile Include="Network\Packet.cs" />
+    <Compile Include="Network\StringPacket.cs" />
+    <Compile Include="Network\VectorPacket.cs" />
     <Compile Include="PacketBinder.cs" />
     <Compile Include="PacketSocket\PacketSocketAsyncEventArgs.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

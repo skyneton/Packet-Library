@@ -2,7 +2,7 @@
 
 namespace SocketPacket.Vector {
     [Serializable]
-    class Vector2D {
+    public class Vector2D {
         public float x, y;
 
         public static float Distance(Vector2D vec1, Vector2D vec2) {

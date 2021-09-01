@@ -19,27 +19,30 @@ namespace SampleClient {
             while (true) {
                 Console.ReadLine();
                 if (socket.Connected) {
-                    Packet packet = new Packet();
+                    Packet packet = new StringPacket(new string[]{ "Client->Server" });
                     packet.type = 15;
                     socket.Send(packet);
-                    Console.WriteLine("패킷 보냄");
+                    Console.WriteLine("Packet Post");
                 }
             }
         }
 
         private static void SocketConnected(object sender, PacketSocketAsyncEventArgs e) {
-            Console.WriteLine("서버 연결 성공");
+            Console.WriteLine("Server Connected");
         }
 
         private static void PacketReceived(object sender, PacketSocketAsyncEventArgs e) {
             for (int i = 0; i < e.ReceivePacketAmount; i++) {
                 Packet packet = e.ReceiveSocket.Receive();
-                Console.WriteLine("패킷 받음 : {0} {1}", packet, packet);
+                Console.WriteLine("Packet Received : {0} {1}", packet, packet.type);
+                if (packet is StringPacket) {
+                    Console.WriteLine(" {0}", ((StringPacket)packet).data[0]);
+                }
             }
         }
 
         private static void Disconneced(object sender, PacketSocketAsyncEventArgs e) {
-            Console.WriteLine("접속 종료");
+            Console.WriteLine("Disconnect");
         }
     }
 }

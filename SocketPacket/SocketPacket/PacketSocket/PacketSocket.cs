@@ -428,7 +428,7 @@ namespace SocketPacket.PacketSocket {
                     if (ReceiveCompleted != null) {
                         PacketSocketAsyncEventArgs args = new PacketSocketAsyncEventArgs();
                         args.ReceiveSocket = this;
-                        args.ReceivePacket = Packet.Deserialize(buf);
+                        args.ReceivePacket = Packet.Deserialize(buf) as Packet;
                         packetQueue.Enqueue(args.ReceivePacket);
                         args.ReceivePacketAmount = packetQueue.Count;
                         ReceiveCompleted(this, args);

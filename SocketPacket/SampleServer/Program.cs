@@ -14,23 +14,26 @@ namespace SampleServer {
 
             socket.Bind(new IPEndPoint(IPAddress.Any, 2555));
             socket.AcceptCompleted += new EventHandler<PacketSocketAsyncEventArgs>(clientConnected);
-            Console.WriteLine("서버 오픈");
+            Console.WriteLine("Server Open");
             while (true) ;
         }
 
         private static void clientConnected(object sender, PacketSocketAsyncEventArgs e) {
             e.AcceptSocket.ReceiveCompleted += new EventHandler<PacketSocketAsyncEventArgs>(PacketReceived);
-            Console.WriteLine("클라이언트 연결됨 : {0}", e.AcceptSocket.RemoteEndPoint.ToString());
-            Packet packet = new Packet();
+            Console.WriteLine("Client Connected : {0}", e.AcceptSocket.RemoteEndPoint.ToString());
+            Packet packet = new StringPacket(new string[] { "Server->Client" });
             packet.type = 255;
             e.AcceptSocket.Send(packet);
-            Console.WriteLine("패킷 보냄");
+            Console.WriteLine("Packet Post");
         }
 
         private static void PacketReceived(object sender, PacketSocketAsyncEventArgs e) {
             for (int i = 0; i < e.ReceivePacketAmount; i++) {
                 Packet packet = e.ReceiveSocket.Receive();
-                Console.WriteLine("패킷 받음 : {0} {1}", packet, packet);
+                Console.WriteLine("Packet Received : {0} {1}", packet, packet.type);
+                if(packet is StringPacket) {
+                    Console.WriteLine(" {0}", ((StringPacket)packet).data[0]);
+                }
             }
         }
     }
