@@ -403,14 +403,11 @@ namespace SocketPacket.PacketSocket {
         }
 
         private void ClientDisconnectWorker() {
-            while (isRunnable && socket.Connected)
-            {
-                if (DisconnectCompleted != null)
-                {
-                    PacketSocketAsyncEventArgs args = new PacketSocketAsyncEventArgs();
-                    args.DisconnectSocket = this;
-                    DisconnectCompleted(this, args);
-                }
+            while (isRunnable && socket.Connected);
+            if (DisconnectCompleted != null) {
+                PacketSocketAsyncEventArgs args = new PacketSocketAsyncEventArgs();
+                args.DisconnectSocket = this;
+                DisconnectCompleted(this, args);
             }
         }
 
