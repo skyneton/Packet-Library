@@ -380,7 +380,6 @@ namespace SocketPacket.PacketSocket {
                     try {
                         PacketSocket client = clientSocketList[i];
                         if (client.socket == null || !client.socket.Connected) {
-                            TrySocketClose(client.socket);
                             clientSocketList.RemoveAt(i);
 
                             if (DisconnectCompleted != null) {
@@ -388,6 +387,8 @@ namespace SocketPacket.PacketSocket {
                                 args.DisconnectSocket = client;
                                 DisconnectCompleted(this, args);
                             }
+
+                            TrySocketClose(client.socket);
                             continue;
                         }
                     }
