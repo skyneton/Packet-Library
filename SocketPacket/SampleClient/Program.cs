@@ -6,22 +6,22 @@ using System.Net.Sockets;
 
 namespace SampleClient {
     class Program {
-        private static PacketSocket socket = new PacketSocket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+        private static PacketSocket socket = new PacketSocket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp); // Create PacketSocket
         static void Main(string[] args) {
-            socket.NoDelay = true;
-            socket.SendTimeout = 100;
-            socket.ConnectCompleted += new EventHandler<PacketSocketAsyncEventArgs>(SocketConnected);
-            socket.ReceiveCompleted += new EventHandler<PacketSocketAsyncEventArgs>(PacketReceived);
-            socket.DisconnectCompleted += new EventHandler<PacketSocketAsyncEventArgs>(Disconneced);
+            socket.NoDelay = true; // Use NoDelay
+            socket.SendTimeout = 100; //Send Max Time - 100
+            socket.ConnectCompleted += new EventHandler<PacketSocketAsyncEventArgs>(SocketConnected); // Add Connect Success Event
+            socket.ReceiveCompleted += new EventHandler<PacketSocketAsyncEventArgs>(PacketReceived); // Add Packet Received Event
+            socket.DisconnectCompleted += new EventHandler<PacketSocketAsyncEventArgs>(Disconneced); // Add Socket Disconnect Event
 
-            socket.ConnectTimeout(new IPEndPoint(IPAddress.Parse("127.0.0.1"), 2555), 1000);
-            //socket.Connect(new IPEndPoint(IPAddress.Parse("127.0.0.1"), 2555));
+            socket.ConnectTimeout(new IPEndPoint(IPAddress.Parse("127.0.0.1"), 2555), 1000); // Socket Connect Async
+            //socket.Connect(new IPEndPoint(IPAddress.Parse("127.0.0.1"), 2555)); //Socket Connect
             while (true) {
-                Console.ReadLine();
-                if (socket.Connected) {
-                    Packet packet = new StringPacket(new string[]{ "Client->Server" });
-                    packet.type = 15;
-                    socket.Send(packet);
+                Console.ReadLine(); // Key Input
+                if (socket.Connected) { //Check Socket is Connect
+                    Packet packet = new StringPacket(new string[]{ "Client->Server" }); // String Packet Create
+                    packet.type = 15; // Packet Type Change
+                    socket.Send(packet); // Packet Send
                     Console.WriteLine("Packet Post");
                 }
             }
@@ -33,10 +33,11 @@ namespace SampleClient {
 
         private static void PacketReceived(object sender, PacketSocketAsyncEventArgs e) {
             for (int i = 0; i < e.ReceivePacketAmount; i++) {
-                Packet packet = e.ReceiveSocket.Receive();
+                //Packet packet = e.ReceivePacket; // Get Received Packet
+                Packet packet = e.ReceiveSocket.Receive(); // Get Packet Queue And Remove
                 Console.WriteLine("Packet Received : {0} {1}", packet, packet.type);
                 if (packet is StringPacket) {
-                    Console.WriteLine(" {0}", ((StringPacket)packet).data[0]);
+                    Console.WriteLine(" {0}", ((StringPacket)packet).data[0]); // Packet String Print
                 }
             }
         }
