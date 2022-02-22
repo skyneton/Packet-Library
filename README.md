@@ -2,61 +2,61 @@
 ## Sample Code
 ### Server
 ```csharp
-SocketPacket.PacketSocket socket = new SocketPacket.PacketSocket(
-    System.Net.Sockets.AddressFamily.InterNetwork,
-    System.Net.Sockets.SocketType.Stream,
-    System.Net.Sockets.ProtocolType.Tcp);
-
-socket.Bind(new IPEndPoint(IPAddress.Any, PORT));
+var socket = new PacketSocket.Network.Sockets.PacketListener(port);
+socket.Start();
 ```
 ### Client
 ```csharp
-SocketPacket.PacketSocket socket = new SocketPacket.PacketSocket(
-    System.Net.Sockets.AddressFamily.InterNetwork,
-    System.Net.Sockets.SocketType.Stream,
-    System.Net.Sockets.ProtocolType.Tcp);
-
-socket.ConnectTimeout(new IPEndPoint(IPAddress, PORT), milliseconds);
+var socket = new PacketSocket.Network.Sockets.PacketClient();
+socket.ConnectTimeout(hostname, port, milliseconds);
 // If the connection fails after milliseconds, interrupt the connection.
 
-// socket.Connect(new IPEndPoint(IPAddress, PORT));
+// socket.Connect(new IPEndPoint(address, port));
 ```
 
 ### Event
 ```csharp
-socket.AcceptCompleted += new EventHandler<PacketSocketAsyncEventArgs>(object sender, PacketSocketAsyncEventArgs e);
-// Called when a socket connects to the server.
-// e.AcceptSocket <- Client Socket
+PacketListener.RegisterAcceptEvent(new EventHandler<PacketSocketEventArgs>(object sender, PacketSocketEventArgs e));
+// Get the connected PacketClient from PacketListener.
+// e.AcceptClient
 
-socket.ConnectCompleted += new EventHandler<PacketSocketAsyncEventArgs>(object sender, PacketSocketAsyncEventArgs e);
-// Called when the client contacts the server.
-// e.ConnectSocket <- Connected Socket
+PacketClient.RegisterConnectEvent(new EventHandler<PacketSocketEventArgs>(object sender, PacketSocketEventArgs e));
+// Get the PacketClient connected to the server.
+// e.ConnectClient
 
-socket.ReceiveCompleted += new EventHandler<PacketSocketAsyncEventArgs>(object sender, PacketSocketAsyncEventArgs e);
-// Called when a packet is received.
-// e.ReceivePacket <- Received Packet
+Socket.RegisterReceiveEvent(new EventHandler<PacketSocketEventArgs>(object sender, PacketSocketEventArgs e));
+// Get the PacketClient that received the packet.
+// e.ReceivePacket
+// e.ReceiveClient
 
-socket.DisconnectCompleted += new EventHandler<PacketSocketAsyncEventArgs>(object sender, PacketSocketAsyncEventArgs e);
-// Called when socket disconnects.
-// e.DisconnectSocket <- Disconnected Socket
+Socket.RegisterDisconnectEvent(new EventHandler<PacketSocketEventArgs>(object sender, PacketSocketEventArgs e));
+// Get the PacketClient where the server connection has been interrupted.
+// e.DisconnectClient
 ```
 
 ## How to generate custom packets?
-1. Open SocketPacket Project
-2. Create csharp Class in Network folder
-3. Write
 >```Csharp
 >//sample code
->namespace SocketPacket.Network {
->    [Serializable]
->    public class SamplePacket : Packet {
->        public string data;
+>public class SamplePacket : IPacket {
+>    public string Data1;
+>    public int Data2;
+>
+>    public int PacketKey => 0; // primary key
+>    public void Write(ByteBuf buf) {
+>        buf.WriteString(Data1);
+>        buf.WriteVarInt(Data2);
+>    }
+>    public void Read(ByteBuf buf) {
+>        Data1 = buf.ReadString();
+>        Data2 = buf.ReadVarInt();
 >    }
 >}
+>
+>PacketManager.RegisterPacket(new SamplePacket()); // important
 >```
 4. build project
 5. Apply libraries to target projects
 
 # Example
-- [Server](https://github.com/skyneton/SocketPacket/blob/main/SocketPacket/SampleServer/Program.cs)
-- [Client](https://github.com/skyneton/SocketPacket/blob/main/SocketPacket/SampleClient/Program.cs)
+- [Server](https://github.com/skyneton/SocketPacket/blob/main/SampleServer/Program.cs)
+- [Client](https://github.com/skyneton/SocketPacket/blob/main/SampleClient/Program.cs)
