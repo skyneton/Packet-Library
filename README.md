@@ -36,6 +36,9 @@
 
 ## Room
 >```cs
+>PacketClient.Join(roomName);
+>PacketClient.To(roomName)
+>```
 
 # How to generate custom packets?
 >```cs
@@ -60,5 +63,5 @@
 >```
 
 # Example
-- [Server](./blob/main/SampleServer/Program.cs)
-- [Client](./blob/main/SampleClient/Program.cs)
+- [Server](./SampleServer/Program.cs)
+- [Client](./SampleClient/Program.cs)
