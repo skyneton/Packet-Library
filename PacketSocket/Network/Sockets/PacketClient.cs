@@ -1,4 +1,7 @@
 ﻿using System;
+using System.Collections.Concurrent;
+using System.Collections.ObjectModel;
+using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
@@ -20,6 +23,10 @@ namespace PacketSocket.Network.Sockets
         private NetworkBuf _networkBuf = new();
 
         internal bool DestroyEnqueued;
+
+        private ConcurrentDictionary<string, Room> _rooms = new();
+
+        public ReadOnlyCollection<Room> Rooms => new ReadOnlyCollection<Room>(_rooms.Values.ToList());
 
         /// <summary>
         /// Gets or sets the underlying Socket.
@@ -140,18 +147,19 @@ namespace PacketSocket.Network.Sockets
             {
                 DisconnectClient = this
             });
+            
+            foreach (var room in _rooms.Values)
+            {
+                room.Leave(this);
+            }
+            
+            _rooms.Clear();
         }
 
         public void Close()
         {
             if(IsAvailable)
-                OnDisconnectCompleted(new PacketSocketEventArgs()
-                {
-                    DisconnectClient = this
-                });
-            
-            IsAvailable = false;
-            _factory.KillAll();
+                Disconnect();
 
             try
             {
@@ -297,6 +305,39 @@ namespace PacketSocket.Network.Sockets
             {
                 Disconnect();
             }
+        }
+
+        /// <summary>
+        /// Access or create a room.
+        /// </summary>
+        /// <param name="roomName">Room name.</param>
+        public void Join(string roomName)
+        {
+            var room = Room.GetOrAdd(roomName);
+            
+            if(_rooms.TryAdd(roomName, room))
+                room.Join(this);
+        }
+
+        /// <summary>
+        /// Leave the room.
+        /// </summary>
+        /// <param name="roomName">Room name.</param>
+        public void Leave(string roomName)
+        {
+            if(_rooms.TryRemove(roomName, out var room))
+                room.Leave(this);
+        }
+
+        /// <summary>
+        /// Get the room where the client is connected.
+        /// </summary>
+        /// <param name="roomName">Room name.</param>
+        /// <returns>null or room</returns>
+        public Room To(string roomName)
+        {
+            _rooms.TryGetValue(roomName, out var room);
+            return room;
         }
     }
 

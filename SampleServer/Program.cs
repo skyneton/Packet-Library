@@ -1,11 +1,12 @@
 ﻿using System;
+using System.Linq;
 using PacketSocket.Network;
 using PacketSocket.Network.Event;
 using PacketSocket.Network.Sockets;
 
 namespace SampleServer
 {
-    class Program
+    internal static class Program
     {
         const int Port = 5000;
         
@@ -20,10 +21,23 @@ namespace SampleServer
             _listener.RegisterDisconnectEvent(new EventHandler<PacketSocketEventArgs>(ClientDisconnected));
             
             PacketManager.RegisterPacket(new StringPacket());
+            PacketManager.RegisterPacket(new RoomPacket());
+            PacketManager.RegisterPacket(new LeavePacket());
             
             _listener.Start();
 
-            while (true) ;
+            while (true)
+            {
+                var command = Console.ReadLine();
+                if(command == null) continue;
+                if (command.StartsWith("!"))
+                {
+                    Console.WriteLine(_listener.Clients.Count);
+                }else if (command.StartsWith("."))
+                {
+                    Console.WriteLine(Room.Rooms.Count);
+                }
+            }
         }
 
         private static void ClientAccepted(object sender, PacketSocketEventArgs e)
@@ -37,16 +51,34 @@ namespace SampleServer
         private static void PacketReceived(object sender, PacketSocketEventArgs e)
         {
             Console.WriteLine("Packet Received : {0}", e.ReceivePacket);
-            
-            if (e.ReceivePacket is StringPacket packet)
+
+            switch (e.ReceivePacket)
             {
-                Console.WriteLine("\tData: {0}", packet.Data);
+                case StringPacket packet:
+                    Console.WriteLine("\tData: {0}", packet.Data);
+                
+                    if(e.ReceiveClient.Rooms.Count == 0)
+                        e.ReceiveClient.SendPacket(new StringPacket()
+                        {
+                            Data = packet.Data
+                        });
+                    else
+                        foreach (var room in e.ReceiveClient.Rooms)
+                        {
+                            room.SendPacket(new StringPacket()
+                            {
+                                Data = packet.Data
+                            });
+                        }
+
+                    break;
+                case RoomPacket packet:
+                    e.ReceiveClient.Join(packet.RoomName);
+                    break;
+                case LeavePacket packet:
+                    e.ReceiveClient.Leave(packet.RoomName);
+                    break;
             }
-            
-            e.ReceiveClient.SendPacket(new StringPacket()
-            {
-                Data = "Server->Client"
-            });
         }
 
         private static void ClientDisconnected(object sender, PacketSocketEventArgs e)

@@ -5,7 +5,7 @@ using PacketSocket.Network.Sockets;
 
 namespace SampleClient
 {
-    class Program
+    internal static class Program
     {
         const int Port = 5000;
         
@@ -21,20 +21,31 @@ namespace SampleClient
             _client.RegisterDisconnectEvent(new EventHandler<PacketSocketEventArgs>(ServerDisconnected));
             
             PacketManager.RegisterPacket(new StringPacket());
+            PacketManager.RegisterPacket(new RoomPacket());
+            PacketManager.RegisterPacket(new LeavePacket());
             
             // _client.Connect("127.0.0.1", Port);
             _client.ConnectTimeout("127.0.0.1", Port, 1000);
             Console.WriteLine("async");
             while (true)
             {
-                Console.ReadLine();
-                if (_client.Connected)
-                {
+                var command = Console.ReadLine();
+                if(command == null || !_client.Connected) continue;
+                if (command.StartsWith("."))
+                    _client.SendPacket(new RoomPacket()
+                    {
+                        RoomName = command.Substring(1)
+                    });
+                else if (command.StartsWith("!"))
+                    _client.SendPacket(new LeavePacket()
+                    {
+                        RoomName = command.Substring(1)
+                    });
+                else
                     _client.SendPacket(new StringPacket()
                     {
-                        Data = "Client -> Server"
+                        Data = command
                     });
-                }
             }
         }
 

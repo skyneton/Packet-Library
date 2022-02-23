@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Concurrent;
+using System.Collections.ObjectModel;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
@@ -17,6 +18,8 @@ namespace PacketSocket.Network.Sockets
 
         private readonly ConcurrentBag<PacketClient> _clients = new();
         private readonly ConcurrentQueue<PacketClient> _destroyClients = new();
+
+        public ReadOnlyCollection<PacketClient> Clients => new(_clients.ToList());
 
         private bool _isRunnable;
         
