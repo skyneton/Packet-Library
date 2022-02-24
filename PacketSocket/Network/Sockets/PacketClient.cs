@@ -18,6 +18,11 @@ namespace PacketSocket.Network.Sockets
         /// Output the error log to the console.
         /// </summary>
         public static bool PrintLog = true;
+
+        /// <summary>
+        /// When Timeout is set and Keep Alive Packet is specified, packets are sent according to the corresponding ratio.
+        /// </summary>
+        public static float KeepAlivePercent = .7F;
         
         private TcpClient _client;
         private NetworkBuf _networkBuf = new();
@@ -27,6 +32,8 @@ namespace PacketSocket.Network.Sockets
         private ConcurrentDictionary<string, Room> _rooms = new();
 
         public ReadOnlyCollection<Room> Rooms => new ReadOnlyCollection<Room>(_rooms.Values.ToList());
+
+        private static IPacket _keepAlivePacket;
 
         /// <summary>
         /// Gets or sets the underlying Socket.
@@ -214,11 +221,21 @@ namespace PacketSocket.Network.Sockets
             DisconnectCompleted?.Invoke(this, e);
         }
 
+        /// <summary>
+        /// After setting Timeout, set the packet to be sent at each specified cost.
+        /// </summary>
+        /// <param name="packet">Your packet.</param>
+        public static void KeepAlivePacket(IPacket packet)
+        {
+            _keepAlivePacket = packet;
+        }
+
         internal void Update()
         {
             if (TimeoutUpdate()) return;
             ReceiveUpdate();
             PacketHandleUpdate();
+            KeepAliveUpdate();
         }
 
         private bool TimeoutUpdate()
@@ -259,6 +276,13 @@ namespace PacketSocket.Network.Sockets
             }
 
             _networkBuf.Clear();
+        }
+
+        private void KeepAliveUpdate()
+        {
+            var now = TimeManager.CurrentTimeMillis;
+            if (_client.Connected && (Timeout <= 0 || now - _lastPacketMillis <= Timeout * KeepAlivePercent) || now - _lastPacketMillis > Timeout || _keepAlivePacket == null) return;
+            SendPacket(_keepAlivePacket);
         }
 
         private void UpdateWorker()
