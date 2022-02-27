@@ -1,6 +1,8 @@
-﻿using System.Collections.Concurrent;
+﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.ObjectModel;
 using System.Linq;
+using PacketSocket.Network.Event;
 using PacketSocket.Utils;
 
 namespace PacketSocket.Network.Sockets
@@ -15,7 +17,10 @@ namespace PacketSocket.Network.Sockets
         public static ReadOnlyCollection<Room> Rooms => new(_rooms.Values.ToList());
         public ReadOnlyCollection<PacketClient> Clients => new(_clients.ToList());
 
-        internal Room(string room)
+        private static event EventHandler<PacketSocketEventArgs> RoomCreateCompleted;
+        private static event EventHandler<PacketSocketEventArgs> RoomDestroyCompleted;
+
+        private Room(string room)
         {
             RoomName = room;
         }
@@ -40,7 +45,15 @@ namespace PacketSocket.Network.Sockets
         
         internal static Room GetOrAdd(string roomName)
         {
-            return _rooms.GetOrAdd(roomName, new Room(roomName));
+            Room create;
+            var room =  _rooms.GetOrAdd(roomName, create = new Room(roomName));
+            if(create == room)
+                room.OnRoomCreateCompleted(new PacketSocketEventArgs()
+                {
+                    Room = room
+                });
+            
+            return room;
         }
 
         /// <summary>
@@ -62,10 +75,41 @@ namespace PacketSocket.Network.Sockets
         internal void Leave(PacketClient client)
         {
             _clients.Remove(client);
-            if (_clients.IsEmpty)
-            {
-                _rooms.TryRemove(RoomName, out _);
-            }
+            if (!_clients.IsEmpty) return;
+            
+            if(_rooms.TryRemove(RoomName, out _))
+                OnRoomDestroyCompleted(new PacketSocketEventArgs()
+                {
+                    Room = this
+                });
+        }
+
+        /// <summary>
+        /// It is an event that runs when a room is created.
+        /// </summary>
+        /// <param name="e">EventHandler</param>
+        public static void RegisterRoomCreateEvent(EventHandler<PacketSocketEventArgs> e)
+        {
+            RoomCreateCompleted += e;
+        }
+
+        /// <summary>
+        /// This is an event that runs when a room is deleted.
+        /// </summary>
+        /// <param name="e">EventHandler</param>
+        public static void RegisterRoomDestroyEvent(EventHandler<PacketSocketEventArgs> e)
+        {
+            RoomDestroyCompleted += e;
+        }
+
+        protected virtual void OnRoomCreateCompleted(PacketSocketEventArgs e)
+        {
+            RoomCreateCompleted?.Invoke(this, e);
+        }
+
+        protected virtual void OnRoomDestroyCompleted(PacketSocketEventArgs e)
+        {
+            RoomDestroyCompleted?.Invoke(this, e);
         }
     }
 }

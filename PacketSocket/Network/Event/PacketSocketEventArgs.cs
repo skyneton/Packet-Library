@@ -8,22 +8,27 @@ namespace PacketSocket.Network.Event
         /// <summary>
         /// Get the connected PacketClient from PacketListener.
         /// </summary>
-        public PacketClient AcceptClient { get; internal set; }
+        public PacketClient AcceptClient { get; internal init; }
         /// <summary>
         /// Get the PacketClient connected to the server.
         /// </summary>
-        public PacketClient ConnectClient { get; internal set; }
+        public PacketClient ConnectClient { get; internal init; }
         /// <summary>
         /// Get the PacketClient where the server connection has been interrupted.
         /// </summary>
-        public PacketClient DisconnectClient { get; internal set; }
+        public PacketClient DisconnectClient { get; internal init; }
         /// <summary>
         /// Get the PacketClient that received the packet.
         /// </summary>
-        public PacketClient ReceiveClient { get; internal set; }
+        public PacketClient ReceiveClient { get; internal init; }
         /// <summary>
         /// Get the packet you received.
         /// </summary>
-        public IPacket ReceivePacket { get; internal set; }
+        public IPacket ReceivePacket { get; internal init; }
+        
+        /// <summary>
+        /// Get the created or deleted room.
+        /// </summary>
+        public Room Room { get; internal init; }
     }
 }
