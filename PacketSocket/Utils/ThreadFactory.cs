@@ -5,7 +5,7 @@ namespace PacketSocket.Utils
 {
     public class ThreadFactory
     {
-        private readonly ConcurrentQueue<Thread> _threads = new ();
+        private readonly ConcurrentQueue<Thread> _threads = new();
 
         public Thread LaunchThread(Thread thread)
         {

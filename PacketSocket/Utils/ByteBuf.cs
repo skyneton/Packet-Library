@@ -10,11 +10,11 @@ namespace PacketSocket.Utils
     public class ByteBuf
     {
         private byte[] _readBuf;
-        private readonly List<byte> _buf = new ();
+        private readonly List<byte> _buf = new();
         public int Available => ReadLength + WriteLength - Position;
         public int WriteLength => _buf.Count;
         public int ReadLength => _readBuf?.Length ?? 0;
-        public int Position = 0;
+        public int Position;
 
         public ByteBuf(byte[] data)
         {

@@ -13,25 +13,25 @@ namespace PacketSocket.Network.Sockets
 {
     public class PacketClient
     {
-        private ThreadFactory _factory = new();
+        private readonly ThreadFactory _factory = new();
         /// <summary>
         /// Output the error log to the console.
         /// </summary>
-        public static bool PrintLog = true;
+        public static bool PrintErrorLog = true;
 
         /// <summary>
         /// When Timeout is set and Keep Alive Packet is specified, packets are sent according to the corresponding ratio.
         /// </summary>
         public static float KeepAlivePercent = .7F;
         
-        private TcpClient _client;
-        private NetworkBuf _networkBuf = new();
+        private readonly TcpClient _client;
+        private readonly NetworkBuf _networkBuf = new();
 
         internal bool DestroyEnqueued;
 
-        private ConcurrentDictionary<string, Room> _rooms = new();
+        private readonly ConcurrentDictionary<string, Room> _rooms = new();
 
-        public ReadOnlyCollection<Room> Rooms => new ReadOnlyCollection<Room>(_rooms.Values.ToList());
+        public ReadOnlyCollection<Room> Rooms => new(_rooms.Values.ToList());
 
         private static IPacket _keepAlivePacket;
 
@@ -69,9 +69,9 @@ namespace PacketSocket.Network.Sockets
         public PacketClient() => _client = new TcpClient();
         public PacketClient(AddressFamily family) => _client = new TcpClient(family);
 
-        public PacketClient(IPEndPoint localEP)
+        public PacketClient(IPEndPoint endPoint)
         {
-            _client = new TcpClient(localEP);
+            _client = new TcpClient(endPoint);
             InitConnect();
         }
 
@@ -138,14 +138,14 @@ namespace PacketSocket.Network.Sockets
                 }
                 catch (Exception e)
                 {
-                    if(PrintLog) Console.WriteLine(e);
+                    if(PrintErrorLog) Console.WriteLine(e);
                 }
 
                 return false;
             });
         }
 
-        internal void Disconnect()
+        private void Disconnect()
         {
             IsAvailable = false;
             _factory.KillAll();
@@ -175,7 +175,7 @@ namespace PacketSocket.Network.Sockets
             }
             catch (Exception e)
             {
-                if(PrintLog) Console.WriteLine(e);
+                if(PrintErrorLog) Console.WriteLine(e);
             }
         }
 
@@ -271,7 +271,7 @@ namespace PacketSocket.Network.Sockets
             }
             catch (Exception e)
             {
-                if(PrintLog) Console.WriteLine(e);
+                if(PrintErrorLog) Console.WriteLine(e);
                 Disconnect();
             }
 

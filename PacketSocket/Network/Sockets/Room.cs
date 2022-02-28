@@ -11,10 +11,10 @@ namespace PacketSocket.Network.Sockets
     {
         public readonly string RoomName;
         
-        private static ConcurrentDictionary<string, Room> _rooms = new();
-        private ConcurrentBag<PacketClient> _clients = new();
+        private static readonly ConcurrentDictionary<string, Room> RoomGroups = new();
+        private readonly ConcurrentBag<PacketClient> _clients = new();
 
-        public static ReadOnlyCollection<Room> Rooms => new(_rooms.Values.ToList());
+        public static ReadOnlyCollection<Room> Rooms => new(RoomGroups.Values.ToList());
         public ReadOnlyCollection<PacketClient> Clients => new(_clients.ToList());
 
         private static event EventHandler<PacketSocketEventArgs> RoomCreateCompleted;
@@ -46,7 +46,7 @@ namespace PacketSocket.Network.Sockets
         internal static Room GetOrAdd(string roomName)
         {
             Room create;
-            var room =  _rooms.GetOrAdd(roomName, create = new Room(roomName));
+            var room =  RoomGroups.GetOrAdd(roomName, create = new Room(roomName));
             if(create == room)
                 room.OnRoomCreateCompleted(new PacketSocketEventArgs()
                 {
@@ -63,7 +63,7 @@ namespace PacketSocket.Network.Sockets
         /// <returns>null or room</returns>
         public static Room Get(string roomName)
         {
-            _rooms.TryGetValue(roomName, out var room);
+            RoomGroups.TryGetValue(roomName, out var room);
             return room;
         }
 
@@ -77,7 +77,7 @@ namespace PacketSocket.Network.Sockets
             _clients.Remove(client);
             if (!_clients.IsEmpty) return;
             
-            if(_rooms.TryRemove(RoomName, out _))
+            if(RoomGroups.TryRemove(RoomName, out _))
                 OnRoomDestroyCompleted(new PacketSocketEventArgs()
                 {
                     Room = this

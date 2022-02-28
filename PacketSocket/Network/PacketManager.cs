@@ -5,7 +5,7 @@ namespace PacketSocket.Network
 {
     public static class PacketManager
     {
-        private static readonly ConcurrentDictionary<int, IPacket> _packets = new();
+        private static readonly ConcurrentDictionary<int, IPacket> Packets = new();
 
         /// <summary>
         /// Registering packets.
@@ -13,12 +13,12 @@ namespace PacketSocket.Network
         /// <param name="packet">Your packet.</param>
         public static void RegisterPacket(IPacket packet)
         {
-            _packets.TryAdd(packet.PacketKey, packet);
+            Packets.TryAdd(packet.PacketKey, packet);
         }
 
         internal static IPacket Handle(ByteBuf buf)
         {
-            if (!_packets.TryGetValue(buf.ReadVarInt(), out var packet)) return null;
+            if (!Packets.TryGetValue(buf.ReadVarInt(), out var packet)) return null;
             packet.Read(buf);
             
             return packet;

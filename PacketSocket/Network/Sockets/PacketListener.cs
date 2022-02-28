@@ -35,8 +35,8 @@ namespace PacketSocket.Network.Sockets
         private event EventHandler<PacketSocketEventArgs> AcceptCompleted;
         private event EventHandler<PacketSocketEventArgs> DisconnectCompleted;
         
-        public PacketListener(IPAddress localaddr, int port) => _listener = new TcpListener(localaddr, port);
-        public PacketListener(IPEndPoint localEP) => _listener = new TcpListener(localEP);
+        public PacketListener(IPAddress localAddress, int port) => _listener = new TcpListener(localAddress, port);
+        public PacketListener(IPEndPoint localEndPoint) => _listener = new TcpListener(localEndPoint);
         public PacketListener(int port) => _listener = new TcpListener(IPAddress.Any, port);
 
         public void Start()
@@ -124,7 +124,7 @@ namespace PacketSocket.Network.Sockets
                 {
                     if (!(client?.IsAvailable ?? false))
                     {
-                        if (client != null && !client.DestroyEnqueued)
+                        if (client is {DestroyEnqueued: false})
                         {
                             client.DestroyEnqueued = true;
                             _destroyClients.Enqueue(client);
