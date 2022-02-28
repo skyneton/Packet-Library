@@ -58,7 +58,7 @@ namespace PacketSocket.Network.Sockets
         /// </summary>
         public int Timeout { get; set; } = 0;
         
-        private long _lastPacketMillis = TimeManager.CurrentTimeMillis;
+        private long _lastPacketMillis;
 
         private event EventHandler<PacketSocketEventArgs> ConnectCompleted;
         private event EventHandler<PacketSocketEventArgs> ReceiveCompleted;
@@ -87,6 +87,8 @@ namespace PacketSocket.Network.Sockets
             {
                 ConnectClient = this
             });
+
+            _lastPacketMillis = TimeManager.CurrentTimeMillis;
             _factory.LaunchThread(new Thread(UpdateWorker));
         }
 
