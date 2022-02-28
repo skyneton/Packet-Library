@@ -58,7 +58,7 @@ namespace PacketSocket.Network.Sockets
         /// </summary>
         public int Timeout { get; set; } = 0;
         
-        private long _lastPacketMillis;
+        public long LastPacketMillis { get; private set; } = TimeManager.CurrentTimeMillis;
 
         private event EventHandler<PacketSocketEventArgs> ConnectCompleted;
         private event EventHandler<PacketSocketEventArgs> ReceiveCompleted;
@@ -88,7 +88,7 @@ namespace PacketSocket.Network.Sockets
                 ConnectClient = this
             });
 
-            _lastPacketMillis = TimeManager.CurrentTimeMillis;
+            LastPacketMillis = TimeManager.CurrentTimeMillis;
             _factory.LaunchThread(new Thread(UpdateWorker));
         }
 
@@ -242,7 +242,7 @@ namespace PacketSocket.Network.Sockets
 
         private bool TimeoutUpdate()
         {
-            if (_client.Connected && (Timeout <= 0 || TimeManager.CurrentTimeMillis - _lastPacketMillis <= Timeout)) return false;
+            if (_client.Connected && (Timeout <= 0 || TimeManager.CurrentTimeMillis - LastPacketMillis <= Timeout)) return false;
             Disconnect();
             return true;
         }
@@ -251,7 +251,7 @@ namespace PacketSocket.Network.Sockets
         {
             if (_client.Available <= 0) return;
 
-            _lastPacketMillis = TimeManager.CurrentTimeMillis;
+            LastPacketMillis = TimeManager.CurrentTimeMillis;
 
             _networkBuf.Buf ??= new byte[ByteBuf.ReadVarInt(_client.GetStream())];
 
@@ -282,14 +282,13 @@ namespace PacketSocket.Network.Sockets
 
         private void KeepAliveUpdate()
         {
-            var now = TimeManager.CurrentTimeMillis;
-            if (_client.Connected && (Timeout <= 0 || now - _lastPacketMillis <= Timeout * KeepAlivePercent) || now - _lastPacketMillis > Timeout || _keepAlivePacket == null) return;
+            if (TimeManager.CurrentTimeMillis - LastPacketMillis < Timeout * KeepAlivePercent || _keepAlivePacket == null) return;
             SendPacket(_keepAlivePacket);
         }
 
         private void UpdateWorker()
         {
-            while (IsAvailable && Connected)
+            while (IsAvailable)
             {
                 Update();
             }
@@ -308,8 +307,9 @@ namespace PacketSocket.Network.Sockets
             try
             {
                 _client.GetStream().WriteAsync(data, 0, data.Length);
+                _client.GetStream().Flush();
 
-                _lastPacketMillis = TimeManager.CurrentTimeMillis;
+                LastPacketMillis = TimeManager.CurrentTimeMillis;
             }
             catch (Exception)
             {
@@ -325,7 +325,7 @@ namespace PacketSocket.Network.Sockets
             {
                 _client.GetStream().WriteAsync(packet, 0, packet.Length);
 
-                _lastPacketMillis = TimeManager.CurrentTimeMillis;
+                LastPacketMillis = TimeManager.CurrentTimeMillis;
             }
             catch (Exception)
             {
